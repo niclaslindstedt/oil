@@ -10,12 +10,14 @@ oil [OPTIONS] [COMMAND]
 
 ## Description
 
-_What this command does and when to reach for it._
+Fetches and displays oil and gas prices from global benchmarks. Data is sourced
+from the U.S. Energy Information Administration (EIA) API.
 
 ## Subcommands
 
 | Command | Description |
 |---|---|
+| `update` | Fetch latest oil and gas prices and save to local cache. |
 | `help` | Show help text. |
 
 ## Flags
@@ -29,6 +31,7 @@ _What this command does and when to reach for it._
 
 | Variable | Description |
 |---|---|
+| `EIA_API_KEY` | API key for the EIA API. Overrides `api_key` in `~/.oil/config.toml`. Get a free key at https://www.eia.gov/opendata/register.php |
 
 ## Exit codes
 
@@ -41,7 +44,11 @@ _What this command does and when to reach for it._
 ## Examples
 
 ```sh
+# Show help
 oil --help
+
+# Fetch latest prices
+oil update
 ```
 
 ## See also

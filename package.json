@@ -4,13 +4,20 @@
   "description": "A TUI CLI that visualizes the price of the important oil in the world. Sourcing data from free data sources.",
   "license": "MIT",
   "type": "module",
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "bin": {
+    "oil": "./dist/cli.js"
+  },
   "scripts": {
-    "build": "echo build",
-    "test": "node --test",
-    "lint": "echo lint",
+    "build": "tsc",
+    "test": "npm run build && node --test 'tests/*_test.ts'",
+    "lint": "tsc --noEmit",
     "fmt": "echo fmt",
     "fmt:check": "echo fmt-check"
   },
-  "author": "Niclas Lindstedt <nicl@slindstedt.se>"
+  "author": "Niclas Lindstedt <nicl@slindstedt.se>",
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.2"
+  }
 }
