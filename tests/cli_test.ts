@@ -19,6 +19,7 @@ describe("cli", () => {
     const { stdout } = await exec("node", [CLI, "--help"]);
     assert.ok(stdout.includes("Usage:"));
     assert.ok(stdout.includes("update"));
+    assert.ok(stdout.includes("show"));
   });
 
   it("prints help with no arguments", async () => {

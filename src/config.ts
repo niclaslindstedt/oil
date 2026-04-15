@@ -1,7 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { parseTOML } from "./toml.js";
+import { parseTOML, type TOMLValue } from "./toml.js";
+import { SERIES } from "./series.js";
 
 const CONFIG_DIR = join(homedir(), ".oil");
 const CONFIG_FILE = join(CONFIG_DIR, "config.toml");
@@ -14,9 +15,10 @@ export interface Config {
   configFile: string;
   cacheDir: string;
   cachePath: string;
+  display: string[];
 }
 
-async function loadConfigFile(): Promise<Record<string, string>> {
+async function loadConfigFile(): Promise<Record<string, TOMLValue>> {
   try {
     const text = await readFile(CONFIG_FILE, "utf-8");
     return parseTOML(text);
@@ -25,9 +27,29 @@ async function loadConfigFile(): Promise<Record<string, string>> {
   }
 }
 
+function resolveDisplay(raw: TOMLValue | undefined): string[] {
+  if (raw === undefined) return [];
+  const list = Array.isArray(raw) ? raw : [raw];
+  const validKeys = new Set(SERIES.map((s) => s.key));
+  const result: string[] = [];
+  for (const entry of list) {
+    if (validKeys.has(entry)) {
+      result.push(entry);
+    } else {
+      console.error(
+        `Warning: unknown series "${entry}" in config display list (ignored).`,
+      );
+    }
+  }
+  return result;
+}
+
 export async function getConfig(): Promise<Config> {
   const file = await loadConfigFile();
-  const apiKey = process.env.EIA_API_KEY || file.api_key;
+  const rawApiKey = file.api_key;
+  const apiKey =
+    process.env.EIA_API_KEY ||
+    (typeof rawApiKey === "string" ? rawApiKey : undefined);
 
   if (!apiKey) {
     console.error(
@@ -45,5 +67,6 @@ export async function getConfig(): Promise<Config> {
     configFile: CONFIG_FILE,
     cacheDir: CACHE_DIR,
     cachePath: CACHE_FILE,
+    display: resolveDisplay(file.display),
   };
 }

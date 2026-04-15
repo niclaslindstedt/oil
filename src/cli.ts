@@ -1,6 +1,7 @@
 import { version } from "./index.js";
 import { help } from "./commands/help.js";
 import { update } from "./commands/update.js";
+import { show } from "./commands/show.js";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -8,6 +9,9 @@ const command = args[0];
 switch (command) {
   case "update":
     await update();
+    break;
+  case "show":
+    await show(args.slice(1));
     break;
   case "help":
   case "--help":
