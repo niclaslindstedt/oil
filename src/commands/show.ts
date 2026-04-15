@@ -1,21 +1,26 @@
 import { getConfig } from "../config.js";
 import { SERIES } from "../series.js";
 import { readCache, type CacheFile } from "../cache.js";
+import { runTui } from "../tui.js";
 
 interface ShowOptions {
   filter: string[];
   all: boolean;
+  plain: boolean;
   unknown: string[];
 }
 
 function parseArgs(args: string[]): ShowOptions {
   const filter: string[] = [];
   let all = false;
+  let plain = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === "--all") {
       all = true;
+    } else if (arg === "--plain") {
+      plain = true;
     } else if (arg === "--series") {
       const next = args[i + 1];
       if (next !== undefined) {
@@ -43,7 +48,7 @@ function parseArgs(args: string[]): ShowOptions {
     }
   }
 
-  return { filter: known, all, unknown };
+  return { filter: known, all, plain, unknown };
 }
 
 export async function show(args: string[]): Promise<void> {
@@ -81,6 +86,12 @@ export async function show(args: string[]): Promise<void> {
 
   if (entries.length === 0) {
     console.error("No prices to show.");
+    return;
+  }
+
+  const useTui = !opts.plain && process.stdout.isTTY === true;
+  if (useTui) {
+    await runTui(cache, activeFilter);
     return;
   }
 
