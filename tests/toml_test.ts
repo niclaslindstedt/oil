@@ -42,4 +42,26 @@ name = "test"
     const result = parseTOML("no equals here\nkey = \"val\"");
     assert.deepStrictEqual(result, { key: "val" });
   });
+
+  it("parses empty arrays", () => {
+    assert.deepStrictEqual(parseTOML("display = []"), { display: [] });
+  });
+
+  it("parses single-element arrays", () => {
+    assert.deepStrictEqual(parseTOML('display = ["brent"]'), {
+      display: ["brent"],
+    });
+  });
+
+  it("parses multi-element arrays", () => {
+    assert.deepStrictEqual(parseTOML('display = ["brent", "wti", "henryhub"]'), {
+      display: ["brent", "wti", "henryhub"],
+    });
+  });
+
+  it("parses arrays with single quotes and mixed whitespace", () => {
+    assert.deepStrictEqual(parseTOML("display = [ 'brent' ,  'wti' ]"), {
+      display: ["brent", "wti"],
+    });
+  });
 });

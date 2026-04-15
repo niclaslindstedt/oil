@@ -1,14 +1,7 @@
 import { getConfig } from "../config.js";
 import { SERIES, type Series } from "../series.js";
-import { fetchSeries, type DataPoint } from "../eia.js";
-import { writeCache } from "../cache.js";
-
-interface BenchmarkEntry {
-  label: string;
-  unit: string;
-  latest: DataPoint | null;
-  history: DataPoint[];
-}
+import { fetchSeries } from "../eia.js";
+import { writeCache, type BenchmarkEntry, type CacheFile } from "../cache.js";
 
 export async function update(): Promise<void> {
   const config = await getConfig();
@@ -33,7 +26,7 @@ export async function update(): Promise<void> {
   const succeeded = Object.keys(benchmarks).length;
 
   if (succeeded > 0) {
-    const cache = {
+    const cache: CacheFile = {
       version: 1,
       updatedAt: new Date().toISOString(),
       benchmarks,
