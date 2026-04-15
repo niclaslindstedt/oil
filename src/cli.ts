@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { version } from "./index.js";
 import { help } from "./commands/help.js";
 import { update } from "./commands/update.js";

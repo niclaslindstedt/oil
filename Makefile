@@ -24,6 +24,9 @@ clean:
 
 install:
 	npm install
+	npm run build
+	npm link
+	@command -v oil >/dev/null 2>&1 && echo "✓ 'oil' is now available in your PATH" || echo "⚠ 'oil' was not found in PATH — check that npm's global bin directory is in your PATH (run: npm config get prefix)"
 
 
 docs:
