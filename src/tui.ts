@@ -1,6 +1,6 @@
 import type { CacheFile } from "./cache.js";
-import type { DataPoint } from "./eia.js";
-import { SERIES } from "./series.js";
+import type { DataPoint } from "./sources/types.js";
+import { allInstruments } from "./sources/index.js";
 
 const ESC = "\x1b[";
 const ALT_ENTER = ESC + "?1049h";
@@ -31,11 +31,11 @@ type Tab = "prices" | "graphs";
 
 export async function runTui(cache: CacheFile, filterKeys: string[]): Promise<void> {
   const filter = new Set(filterKeys);
-  const entries: Entry[] = SERIES
-    .filter((s) => (filter.size === 0 || filter.has(s.key)) && cache.benchmarks[s.key])
-    .map((s) => {
-      const b = cache.benchmarks[s.key]!;
-      return { key: s.key, label: b.label, unit: b.unit, latest: b.latest, history: b.history };
+  const entries: Entry[] = allInstruments()
+    .filter((i) => (filter.size === 0 || filter.has(i.key)) && cache.benchmarks[i.key])
+    .map((i) => {
+      const b = cache.benchmarks[i.key]!;
+      return { key: i.key, label: b.label, unit: b.unit, latest: b.latest, history: b.history };
     });
 
   let tab: Tab = "prices";

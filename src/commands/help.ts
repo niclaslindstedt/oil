@@ -1,17 +1,38 @@
 import { version } from "../index.js";
+import { SOURCES, allInstruments } from "../sources/index.js";
 
 export function help(): void {
-  console.log(`oil v${version} — oil and gas price tracker for your terminal
+  const allKeys = allInstruments().map((i) => i.key);
+
+  const sourceLines = SOURCES.map((s) => {
+    const keys = s.instruments.map((i) => i.key).join(", ");
+    const auth = s.envVar
+      ? `(requires ${s.envVar})`
+      : "(no API key required)";
+    return `  ${s.label}: ${keys} ${auth}`;
+  }).join("\n");
+
+  const envLines = SOURCES
+    .filter((s) => s.envVar)
+    .map((s) => {
+      const configHint = s.configKey
+        ? ` (or set sources.${s.configKey}.api_key in config)`
+        : "";
+      return `  ${s.envVar!.padEnd(16)} ${s.label}${configHint}`;
+    })
+    .join("\n");
+
+  console.log(`oil v${version} — commodity price tracker for your terminal
 
 Usage: oil [command]
 
 Commands:
-  update    Fetch latest oil and gas prices from EIA
-  show      Show cached oil and gas prices
+  update    Fetch latest prices from all configured sources
+  show      Show cached prices
   help      Show this help text
 
 Show options:
-  oil show [series...]          Filter to listed series (e.g. brent wti)
+  oil show [series...]          Filter to listed series (e.g. brent gold)
   oil show --series brent,wti   Same, comma-separated
   oil show --all                Ignore the display filter from config
 
@@ -19,12 +40,14 @@ Options:
   --version  Print version
   --help     Show this help text
 
+Sources:
+${sourceLines}
+
 Environment:
-  EIA_API_KEY  EIA API key (or set api_key in ~/.oil/config.toml)
-               Get a free key at https://www.eia.gov/opendata/register.php
+${envLines}
 
 Config (~/.oil/config.toml):
-  api_key = "your-key-here"
+  sources.eia.api_key = "your-key-here"
   display = ["brent", "wti"]    # which prices \`oil show\` displays by default
-                                # valid keys: brent, wti, dubai, henryhub`);
+                                # valid keys: ${allKeys.join(", ")}`);
 }

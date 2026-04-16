@@ -1,6 +1,6 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
-import type { DataPoint } from "./eia.js";
+import type { DataPoint } from "./sources/types.js";
 
 export interface BenchmarkEntry {
   label: string;
