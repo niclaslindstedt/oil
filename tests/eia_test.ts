@@ -1,9 +1,8 @@
 import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
-import { fetchSeries } from "../dist/eia.js";
-import type { Series } from "../dist/series.js";
+import { eiaSource, type EiaInstrument } from "../dist/sources/eia.js";
 
-const BRENT: Series = {
+const BRENT: EiaInstrument = {
   key: "brent",
   label: "Brent Crude",
   unit: "USD/bbl",
@@ -11,7 +10,7 @@ const BRENT: Series = {
   facet: "RBRTE",
 };
 
-describe("fetchSeries", () => {
+describe("eiaSource.fetch", () => {
   let originalFetch: typeof globalThis.fetch;
 
   beforeEach(() => {
@@ -35,7 +34,7 @@ describe("fetchSeries", () => {
       }),
     })) as typeof fetch;
 
-    const result = await fetchSeries("test-key", BRENT);
+    const result = await eiaSource.fetch(BRENT, { apiKey: "test-key" });
     assert.deepStrictEqual(result, [
       { period: "2026-04-14", value: 72.35 },
       { period: "2026-04-13", value: 71.9 },
@@ -49,7 +48,7 @@ describe("fetchSeries", () => {
       text: async () => "Forbidden",
     })) as typeof fetch;
 
-    await assert.rejects(() => fetchSeries("bad-key", BRENT), {
+    await assert.rejects(() => eiaSource.fetch(BRENT, { apiKey: "bad-key" }), {
       message: /HTTP 403/,
     });
   });
@@ -60,7 +59,7 @@ describe("fetchSeries", () => {
       json: async () => ({ response: {} }),
     })) as typeof fetch;
 
-    await assert.rejects(() => fetchSeries("test-key", BRENT), {
+    await assert.rejects(() => eiaSource.fetch(BRENT, { apiKey: "test-key" }), {
       message: /unexpected format/i,
     });
   });
@@ -75,11 +74,17 @@ describe("fetchSeries", () => {
       };
     }) as typeof fetch;
 
-    await fetchSeries("my-key", BRENT, { length: 10 });
+    await eiaSource.fetch(BRENT, { apiKey: "my-key" }, { length: 10 });
 
     assert.ok(capturedUrl.includes("api_key=my-key"));
     assert.ok(capturedUrl.includes("petroleum/pri/spt/data"));
     assert.ok(capturedUrl.includes("RBRTE"));
     assert.ok(capturedUrl.includes("length=10"));
+  });
+
+  it("throws when apiKey is missing", async () => {
+    await assert.rejects(() => eiaSource.fetch(BRENT, {}), {
+      message: /API key is required/,
+    });
   });
 });

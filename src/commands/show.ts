@@ -1,5 +1,5 @@
 import { getConfig } from "../config.js";
-import { SERIES } from "../series.js";
+import { allInstruments } from "../sources/index.js";
 import { readCache, type CacheFile } from "../cache.js";
 import { runTui } from "../tui.js";
 
@@ -11,6 +11,7 @@ interface ShowOptions {
 }
 
 function parseArgs(args: string[]): ShowOptions {
+  const instruments = allInstruments();
   const filter: string[] = [];
   let all = false;
   let plain = false;
@@ -37,7 +38,7 @@ function parseArgs(args: string[]): ShowOptions {
     }
   }
 
-  const validKeys = new Set(SERIES.map((s) => s.key));
+  const validKeys = new Set(instruments.map((i) => i.key));
   const known: string[] = [];
   const unknown: string[] = [];
   for (const key of filter) {
@@ -79,9 +80,9 @@ export async function show(args: string[]): Promise<void> {
   }
 
   const filterSet = new Set(activeFilter);
-  const entries = SERIES.filter((s) => {
-    if (filterSet.size > 0 && !filterSet.has(s.key)) return false;
-    return cache.benchmarks[s.key] !== undefined;
+  const entries = allInstruments().filter((i) => {
+    if (filterSet.size > 0 && !filterSet.has(i.key)) return false;
+    return cache.benchmarks[i.key] !== undefined;
   });
 
   if (entries.length === 0) {
@@ -95,8 +96,8 @@ export async function show(args: string[]): Promise<void> {
     return;
   }
 
-  for (const series of entries) {
-    const b = cache.benchmarks[series.key];
+  for (const instrument of entries) {
+    const b = cache.benchmarks[instrument.key];
     const price = b.latest?.value != null ? `$${b.latest.value}` : "N/A";
     const date = b.latest?.period ?? "";
     console.log(`  ${b.label}: ${price} (${date})`);

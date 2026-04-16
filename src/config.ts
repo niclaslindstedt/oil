@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { parseTOML, type TOMLValue } from "./toml.js";
-import { SERIES } from "./series.js";
+import { SOURCES, allInstruments } from "./sources/index.js";
 
 const CONFIG_DIR = join(homedir(), ".oil");
 const CONFIG_FILE = join(CONFIG_DIR, "config.toml");
@@ -10,7 +10,7 @@ const CACHE_DIR = join(CONFIG_DIR, "cache");
 const CACHE_FILE = join(CACHE_DIR, "prices.json");
 
 export interface Config {
-  apiKey: string;
+  sourceAuth: Record<string, { apiKey?: string }>;
   configDir: string;
   configFile: string;
   cacheDir: string;
@@ -30,7 +30,7 @@ async function loadConfigFile(): Promise<Record<string, TOMLValue>> {
 function resolveDisplay(raw: TOMLValue | undefined): string[] {
   if (raw === undefined) return [];
   const list = Array.isArray(raw) ? raw : [raw];
-  const validKeys = new Set(SERIES.map((s) => s.key));
+  const validKeys = new Set(allInstruments().map((i) => i.key));
   const result: string[] = [];
   for (const entry of list) {
     if (validKeys.has(entry)) {
@@ -44,25 +44,49 @@ function resolveDisplay(raw: TOMLValue | undefined): string[] {
   return result;
 }
 
-export async function getConfig(): Promise<Config> {
-  const file = await loadConfigFile();
-  const rawApiKey = file.api_key;
-  const apiKey =
-    process.env.EIA_API_KEY ||
-    (typeof rawApiKey === "string" ? rawApiKey : undefined);
+function resolveSourceAuth(
+  file: Record<string, TOMLValue>,
+): Record<string, { apiKey?: string }> {
+  const auth: Record<string, { apiKey?: string }> = {};
 
-  if (!apiKey) {
-    console.error(
-      "Error: No EIA API key found.\n\n" +
-        "Set the EIA_API_KEY environment variable or add api_key to ~/.oil/config.toml:\n\n" +
-        '  api_key = "your-key-here"\n\n' +
-        "Get a free API key at: https://www.eia.gov/opendata/register.php",
-    );
-    process.exit(2);
+  for (const source of SOURCES) {
+    let apiKey: string | undefined;
+
+    // 1. Environment variable (highest priority)
+    if (source.envVar) {
+      apiKey = process.env[source.envVar] || undefined;
+    }
+
+    // 2. Dotted config key: sources.<configKey>.api_key
+    if (!apiKey && source.configKey) {
+      const configVal = file[`sources.${source.configKey}.api_key`];
+      if (typeof configVal === "string") {
+        apiKey = configVal;
+      }
+    }
+
+    // 3. Legacy top-level api_key (only for EIA, backward compat)
+    if (!apiKey && source.key === "eia") {
+      const legacy = file.api_key;
+      if (typeof legacy === "string") {
+        apiKey = legacy;
+      }
+    }
+
+    if (apiKey) {
+      auth[source.key] = { apiKey };
+    }
   }
 
+  return auth;
+}
+
+export async function getConfig(): Promise<Config> {
+  const file = await loadConfigFile();
+  const sourceAuth = resolveSourceAuth(file);
+
   return {
-    apiKey,
+    sourceAuth,
     configDir: CONFIG_DIR,
     configFile: CONFIG_FILE,
     cacheDir: CACHE_DIR,

@@ -1,25 +1,34 @@
 import { getConfig } from "../config.js";
-import { SERIES, type Series } from "../series.js";
-import { fetchSeries } from "../eia.js";
+import { SOURCES, type Instrument } from "../sources/index.js";
 import { writeCache, type BenchmarkEntry, type CacheFile } from "../cache.js";
 
 export async function update(): Promise<void> {
   const config = await getConfig();
   const benchmarks: Record<string, BenchmarkEntry> = {};
-  const errors: { series: Series; err: Error }[] = [];
+  const errors: { instrument: Instrument; err: Error }[] = [];
 
-  for (const series of SERIES) {
-    try {
-      const data = await fetchSeries(config.apiKey, series);
-      const latest = data[0] || null;
-      benchmarks[series.key] = {
-        label: series.label,
-        unit: series.unit,
-        latest,
-        history: data,
-      };
-    } catch (err) {
-      errors.push({ series, err: err as Error });
+  for (const source of SOURCES) {
+    const auth = config.sourceAuth[source.key] ?? {};
+    if (source.envVar && !auth.apiKey) {
+      console.error(
+        `  Skipping ${source.label}: no API key (set ${source.envVar}).`,
+      );
+      continue;
+    }
+
+    for (const instrument of source.instruments) {
+      try {
+        const data = await source.fetch(instrument, auth);
+        const latest = data[0] || null;
+        benchmarks[instrument.key] = {
+          label: instrument.label,
+          unit: instrument.unit,
+          latest,
+          history: data,
+        };
+      } catch (err) {
+        errors.push({ instrument, err: err as Error });
+      }
     }
   }
 
@@ -42,8 +51,8 @@ export async function update(): Promise<void> {
 
   if (errors.length > 0) {
     console.error("");
-    for (const { series, err } of errors) {
-      console.error(`  Warning: failed to fetch ${series.label}: ${err.message}`);
+    for (const { instrument, err } of errors) {
+      console.error(`  Warning: failed to fetch ${instrument.label}: ${err.message}`);
     }
   }
 
