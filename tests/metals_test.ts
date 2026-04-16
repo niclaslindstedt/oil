@@ -83,6 +83,38 @@ describe("metalsSource.fetch", () => {
     const result = await metalsSource.fetch(GOLD, {});
     assert.strictEqual(result.length, 0);
   });
+
+  it("uses d1 and d2 params when from/to are provided", async () => {
+    let capturedUrl = "";
+    globalThis.fetch = (async (url: URL) => {
+      capturedUrl = url.toString();
+      return {
+        ok: true,
+        text: async () => SAMPLE_CSV,
+      };
+    }) as typeof fetch;
+
+    await metalsSource.fetch(GOLD, {}, {
+      from: "2025-01-01",
+      to: "2025-06-30",
+    });
+
+    assert.ok(capturedUrl.includes("d1=20250101"), "should have d1 param");
+    assert.ok(capturedUrl.includes("d2=20250630"), "should have d2 param");
+  });
+
+  it("returns all data when from/to are set (no length slicing)", async () => {
+    globalThis.fetch = (async () => ({
+      ok: true,
+      text: async () => SAMPLE_CSV,
+    })) as typeof fetch;
+
+    const result = await metalsSource.fetch(GOLD, {}, {
+      from: "2026-04-12",
+      to: "2026-04-14",
+    });
+    assert.strictEqual(result.length, 3, "should return all 3 rows, not sliced");
+  });
 });
 
 describe("metalsSource metadata", () => {

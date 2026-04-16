@@ -9,7 +9,7 @@ const command = args[0];
 
 switch (command) {
   case "update":
-    await update();
+    await update(args.slice(1));
     break;
   case "show":
     await show(args.slice(1));

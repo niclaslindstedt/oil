@@ -11,6 +11,8 @@ export interface Instrument {
 
 export interface FetchOptions {
   length?: number;
+  from?: string;
+  to?: string;
 }
 
 export interface Source<I extends Instrument = Instrument> {

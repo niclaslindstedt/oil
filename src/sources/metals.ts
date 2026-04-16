@@ -6,7 +6,7 @@ interface MetalsInstrument extends Instrument {
   ticker: string;
 }
 
-function parseCsv(text: string, length: number): DataPoint[] {
+function parseCsv(text: string, length?: number): DataPoint[] {
   const lines = text.trim().split("\n");
   if (lines.length < 2) return [];
 
@@ -26,17 +26,24 @@ function parseCsv(text: string, length: number): DataPoint[] {
 
   // Stooq returns oldest-first; reverse to newest-first
   points.reverse();
-  return points.slice(0, length);
+  return length != null ? points.slice(0, length) : points;
+}
+
+function toStooqDate(iso: string): string {
+  return iso.replace(/-/g, "");
 }
 
 async function fetchMetals(
   instrument: MetalsInstrument,
   _auth: { apiKey?: string },
-  { length = 30 }: FetchOptions = {},
+  opts: FetchOptions = {},
 ): Promise<DataPoint[]> {
   const url = new URL(BASE_URL);
   url.searchParams.set("s", instrument.ticker);
   url.searchParams.set("i", "d");
+
+  if (opts.from) url.searchParams.set("d1", toStooqDate(opts.from));
+  if (opts.to) url.searchParams.set("d2", toStooqDate(opts.to));
 
   const res = await fetch(url);
 
@@ -48,7 +55,8 @@ async function fetchMetals(
   }
 
   const text = await res.text();
-  return parseCsv(text, length);
+  const useLength = (opts.from || opts.to) ? undefined : (opts.length ?? 30);
+  return parseCsv(text, useLength);
 }
 
 export const metalsSource: Source<MetalsInstrument> = {
