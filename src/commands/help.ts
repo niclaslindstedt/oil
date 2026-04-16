@@ -31,6 +31,12 @@ Commands:
   show      Show cached prices
   help      Show this help text
 
+Update options:
+  oil update                                      Fetch latest ~30 days (default)
+  oil update --from 2025-01-01                    Fetch from date to today
+  oil update --to 2026-03-01                      Fetch last month up to date
+  oil update --from 2025-01-01 --to 2025-12-31   Fetch custom date range
+
 Show options:
   oil show [series...]          Filter to listed series (e.g. brent gold)
   oil show --series brent,wti   Same, comma-separated

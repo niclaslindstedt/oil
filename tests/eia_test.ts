@@ -87,4 +87,51 @@ describe("eiaSource.fetch", () => {
       message: /API key is required/,
     });
   });
+
+  it("uses start and end params when from/to are provided", async () => {
+    let capturedUrl = "";
+    globalThis.fetch = (async (url: URL) => {
+      capturedUrl = url.toString();
+      return {
+        ok: true,
+        json: async () => ({ response: { data: [] } }),
+      };
+    }) as typeof fetch;
+
+    await eiaSource.fetch(BRENT, { apiKey: "my-key" }, {
+      from: "2025-01-01",
+      to: "2025-06-30",
+    });
+
+    assert.ok(capturedUrl.includes("start=2025-01-01"), "should have start param");
+    assert.ok(capturedUrl.includes("end=2025-06-30"), "should have end param");
+    assert.ok(!capturedUrl.includes("length=30"), "should not have default length");
+  });
+
+  it("paginates when a page is full", async () => {
+    const fullPage = Array.from({ length: 5000 }, (_, i) => ({
+      period: `2025-01-${String(i + 1).padStart(2, "0")}`,
+      value: 70 + i,
+    }));
+    const secondPage = [{ period: "2024-12-31", value: 69 }];
+
+    let callCount = 0;
+    globalThis.fetch = (async (url: URL) => {
+      callCount++;
+      const offset = url.searchParams.get("offset");
+      const data = offset === "5000" ? secondPage : fullPage;
+      return {
+        ok: true,
+        json: async () => ({ response: { data } }),
+      };
+    }) as typeof fetch;
+
+    const result = await eiaSource.fetch(BRENT, { apiKey: "my-key" }, {
+      from: "2024-01-01",
+      to: "2025-12-31",
+    });
+
+    assert.strictEqual(callCount, 2, "should make two requests");
+    assert.strictEqual(result.length, 5001, "should merge both pages");
+  });
 });
