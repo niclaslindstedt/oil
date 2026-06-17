@@ -17,7 +17,7 @@
   },
   "author": "Niclas Lindstedt <nicl@slindstedt.se>",
   "devDependencies": {
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.9.3",
     "typescript": "^6.0.2"
   }
 }
